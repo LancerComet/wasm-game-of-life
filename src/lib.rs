@@ -1,4 +1,4 @@
-mod utils;
+// mod utils;
 
 use wasm_bindgen::prelude::*;
 use std::fmt;
@@ -47,6 +47,25 @@ impl Universe {
 
     return count;
   }
+
+  fn make_all_cells_dead (&mut self) {
+    self.cells = (0..self.width * self.height)
+      .map(|_| Cell::Dead)
+      .collect();
+  }
+}
+
+impl Universe {
+  pub fn get_cells (&self) -> &[Cell] {
+    return &self.cells;
+  }
+
+  pub fn set_cells_alive (&mut self, cells: &[(u32, u32)]) {
+    for (row, column) in cells.iter().cloned() {
+      let index = self.get_index(row, column);
+      self.cells[index] = Cell::Alive;
+    }
+  }
 }
 
 #[wasm_bindgen]
@@ -87,6 +106,20 @@ impl Universe {
     self.cells = next;
   }
 
+  pub fn render (&self) -> String {
+    return self.to_string();
+  }
+
+  pub fn set_width (&mut self, width: u32) {
+    self.width = width;
+    self.make_all_cells_dead();
+  }
+
+  pub fn set_height (&mut self, height: u32) {
+    self.height = height;
+    self.make_all_cells_dead();
+  }
+
   pub fn new () -> Universe {
     let width = 64;
     let height = 64;
@@ -106,10 +139,6 @@ impl Universe {
       height,
       cells
     }
-  }
-
-  pub fn render (&self) -> String {
-    return self.to_string();
   }
 }
 

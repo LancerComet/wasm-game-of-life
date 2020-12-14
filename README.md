@@ -1,4 +1,4 @@
-# Conway's Game of Live
+# Conway's Game of Life
 
 Rust -> WASM 的生命游戏.
 
@@ -9,6 +9,10 @@ Rust -> WASM 的生命游戏.
 ## 运行
 
 在根目录中启动一个 Http 服务器并访问 `/demo/index.html` 即可.
+
+## 测试
+
+`wasm-pack test --firefox/chrome/safari --headless`
 
 ## 问题
 
