@@ -75,7 +75,7 @@ async function main () {
 
         context.fillStyle = cells[index] === Cell.Dead
           ? DEAD_COLOR
-          : ALIVE_COLOR;
+          : ALIVE_COLOR
 
         context.fillRect(
           column * (CELL_SIZE + 1) + 1,
