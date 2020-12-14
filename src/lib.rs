@@ -1,8 +1,16 @@
-// mod utils;
+mod utils;
 
 use wasm_bindgen::prelude::*;
 use std::fmt;
 use js_sys;
+use web_sys;
+
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -16,6 +24,15 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub enum Cell {
   Dead = 0,
   Alive = 1
+}
+
+impl Cell {
+  fn toggle (&mut self) {
+    *self = match *self {
+      Cell::Dead => Cell::Alive,
+      Cell::Alive => Cell::Dead
+    };
+  }
 }
 
 #[wasm_bindgen]
@@ -55,6 +72,7 @@ impl Universe {
   }
 }
 
+// For unit test.
 impl Universe {
   pub fn get_cells (&self) -> &[Cell] {
     return &self.cells;
@@ -78,20 +96,25 @@ impl Universe {
     return self.height;
   }
 
-  pub fn cells (&self) -> *const Cell {
+  pub fn get_cells_ptr (&self) -> *const Cell {
     return self.cells.as_ptr();
   }
 
   pub fn tick (&mut self) {
-    let mut next = self.cells.clone();
+    let mut cells_next_state = self.cells.clone();
 
     for row in 0..self.height {
-      for col in 0..self.width {
-        let idx = self.get_index(row, col);
-        let cell = self.cells[idx];
-        let live_neighbors = self.live_neighbor_count(row, col);
+      for column in 0..self.width {
+        let index = self.get_index(row, column);
+        let cell = self.cells[index];
+        let live_neighbors = self.live_neighbor_count(row, column);
 
-        let next_cell = match (cell, live_neighbors) {
+        // log!(
+        //   "cell[{}, {}] is initially {:?} and has {} live neighbors",
+        //   row, column, cell, live_neighbors
+        // );
+
+        let cell_next_state = match (cell, live_neighbors) {
           (Cell::Alive, x) if x < 2 => Cell::Dead,
           (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
           (Cell::Alive, x) if x > 3 => Cell::Dead,
@@ -99,11 +122,13 @@ impl Universe {
           (otherwise, _) => otherwise,
         };
 
-        next[idx] = next_cell;
+        // log!("    it becomes {:?}", cell_next_state);
+
+        cells_next_state[index] = cell_next_state;
       }
     }
 
-    self.cells = next;
+    self.cells = cells_next_state;
   }
 
   pub fn render (&self) -> String {
@@ -120,16 +145,18 @@ impl Universe {
     self.make_all_cells_dead();
   }
 
-  pub fn new () -> Universe {
-    let width = 64;
-    let height = 64;
+  pub fn toggle_cell (&mut self, row: u32, column: u32) {
+    let index = self.get_index(row, column);
+    self.cells[index].toggle();
+  }
+
+  pub fn new (width: u32, height: u32) -> Universe {
+    utils::set_panic_hook();
     let cells = (0..width * height)
         .map(|_| {
-          let random = js_sys::Math::random();
-          if random >= 0.5 {
-            Cell::Alive
-          } else {
-            Cell::Dead
+          match js_sys::Math::random() {
+            r if r < 0.5 => Cell::Alive,
+            _ => Cell::Dead
           }
         })
         .collect();

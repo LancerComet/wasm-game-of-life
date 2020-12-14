@@ -5,12 +5,14 @@ main()
 async function main () {
   const { memory } = await init()
 
-  const CELL_SIZE = 10
+  const UNIVERSE_WIDTH = 90
+  const UNIVERSE_HEIGHT = 90
+  const CELL_SIZE = 8
   const GRID_COLOR = '#ccc'
   const DEAD_COLOR = '#fff'
   const ALIVE_COLOR = '#000'
 
-  const universe = Universe.new()
+  const universe = Universe.new(UNIVERSE_WIDTH, UNIVERSE_HEIGHT)
   const width = universe.width()
   const height = universe.height()
 
@@ -18,6 +20,21 @@ async function main () {
   const context = stage.getContext('2d')
   stage.height = (CELL_SIZE + 1) * height + 1
   stage.width = (CELL_SIZE + 1) * width + 1
+
+  stage.addEventListener('click', event => {
+    const boundingRect = stage.getBoundingClientRect()
+
+    const scaleX = stage.width / boundingRect.width
+    const scaleY = stage.height / boundingRect.height
+
+    const canvasLeft = (event.clientX - boundingRect.left) * scaleX
+    const canvasTop = (event.clientY - boundingRect.top) * scaleY
+
+    const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1)
+    const column = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1)
+
+    universe.toggle_cell(row, column);
+  })
 
   const tick = () => {
     universe.tick()
@@ -48,7 +65,7 @@ async function main () {
   }
 
   function drawCells () {
-    const cellsPtr = universe.cells();
+    const cellsPtr = universe.get_cells_ptr()
     const cells = new Uint8Array(memory.buffer, cellsPtr, width * height)
     context.beginPath()
 
